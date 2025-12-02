@@ -1,11 +1,10 @@
 import Default from "../templates/Default";
 
-
-export default function Login() {
+export default function Signup() {
   return (
     <Default>
       <div className="">
-        Login
+        Signup
       </div>
     </Default>
   );
