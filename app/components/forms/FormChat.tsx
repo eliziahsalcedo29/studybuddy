@@ -1,46 +1,32 @@
 'use client'
-
 import { useChat } from '@ai-sdk/react'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { UserRound, Bot } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-
 export default function FormChat() {
-  // AI SDK
   const { messages, sendMessage } = useChat({
     onError: (error) => {
       console.log('error: ', error)
       setError(error.toString())
     },
   })
-
-  // States
   const [error, setError] = useState('')
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-
-  // Ref for auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Functions
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-
-      // trigger
       const form = e.currentTarget.form
       if (form && input.trim()) {
         form.requestSubmit()
       }
     }
   }
-
-  // Handle chat
   async function handleChat(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-
     if (!input) return
-
     try {
       setIsLoading(true)
       await sendMessage({ text: input })
@@ -52,75 +38,83 @@ export default function FormChat() {
       setIsLoading(false)
     }
   }
-
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    } else if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
+  }, [messages])
   return (
-    <div className="max-w-md w-full mx-auto">
-      {/* Message Display Area */}
-      {messages && messages.length > 0 && (
-        <div className="flex-1 flex flex-col gap-1">
-          {messages.map((message) => (
-            <div
-              data-loading={isLoading}
-              key={message.id}
-              className="flex gap-3  p-2"
-            >
-              {message.role === 'user' ? (
-                <div className="h-10 w-10 aspect-square rounded-full border flex items-center justify-center bg-gray-300">
-                  <UserRound />
-                </div>
-              ) : (
-                <div className="h-10 w-10 aspect-square rounded-full border flex items-center justify-center bg-gray-300">
-                  <Bot />
-                </div>
-              )}
-              {message.parts.map((part, i) => {
-                switch (part.type) {
-                  case 'text':
-                    return (
-                      <div
-                        key={`${message.id}-${i}`}
-                        className="bg-gray-200 flex flex-col items-center p-3 rounded-md"
-                      >
-                        <div className="[&>p]:mb-3 [&>p]:last:mb-0 [&>ul]:mb-4 [&>ul>li]:list-disc [&>ul>li]:ml-5 [&>ol>li]:list-decimal [&>ol>li]:ml-5">
-                          <ReactMarkdown>{part.text}</ReactMarkdown>
-                        </div>
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="mx-auto w-full max-w-2xl max-h-[65vh] flex flex-col bg-transparent">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-6">
+          {messages && messages.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {messages.map((message) => (
+                <div key={message.id} className="flex gap-3 items-start p-1">
+                  <div className="shrink-0">
+                    {message.role === 'user' ? (
+                      <div className="h-10 w-10 rounded-full border flex items-center justify-center bg-teal-600 text-white border-teal-700">
+                        <UserRound />
                       </div>
-                    )
-                }
-              })}
+                    ) : (
+                      <div className="h-10 w-10 rounded-full border flex items-center justify-center bg-teal-600 text-white border-teal-700">
+                        <Bot />
+                      </div>
+                    )}
+                  </div>
+                  <div className={message.role === 'user' ? 'flex justify-end' : 'flex-1'}>
+                    {message.parts.map((part, i) => {
+                      if (part.type === 'text') {
+                        return (
+                          <div
+                            key={`${message.id}-${i}`}
+                            className={`p-4 rounded-md [&>p]:mb-3 [&>p]:last:mb-0 [&>ul]:mb-4 [&>ul>li]:list-disc [&>ul>li]:ml-5 [&>ol>li]:list-decimal [&>ol>li]:ml-5 [&_strong]:font-semibold [&_b]:font-semibold ${
+                              message.role === 'user' 
+                                ? 'bg-teal-100 text-black max-w-fit' 
+                                : 'bg-gray-100'
+                            }`}
+                          >
+                            <ReactMarkdown>{part.text}</ReactMarkdown>
+                          </div>
+                        )
+                      }
+                      return null
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
-          ))}
-          {/** Mark end of chat */}
-          <div ref={messagesEndRef} />
+          )}
         </div>
-      )}
-      <form
-        data-loading={isLoading}
-        onSubmit={(e) => handleChat(e)}
-        className="max-w-md w-full mx-auto flex-1 sticky bottom-10 flex flex-col gap-2 bg-white"
-      >
-        <div className="form-control">
-          <textarea
-            name="message"
-            placeholder="What do you want to know?"
-            className="w-full p-2 border rounded resize-none"
-            onKeyDown={handleKeyDown}
-            value={input}
-            onChange={(e) => {
-              console.log(e.currentTarget.value)
-              setInput(e.currentTarget.value)
-            }}
-          ></textarea>
-        </div>
-
-        {error && <div className="alert alert--error">{error}</div>}
-
-        <div className="flex justify-center mt-2">
-          <button type="submit" className="button button--default">
-            {isLoading ? 'Thinking...' : 'Send'}
-          </button>
-        </div>
-      </form>
+        <form onSubmit={handleChat} data-loading={isLoading} className="px-6 pb-6 pt-3">
+          <div className="flex items-center border-2" style={{ borderColor: '#0f7a66', borderRadius: 9999 }}>
+            <input
+              name="message"
+              placeholder="What do you want to know?"
+              className="flex-1 px-6 py-3 text-gray-700 placeholder-gray-400 bg-white rounded-l-full rounded-r-none outline-none"
+              onKeyDown={handleKeyDown}
+              value={input}
+              onChange={(e) => setInput(e.currentTarget.value)}
+            />
+            {error && <div className="alert alert--error">{error}</div>}
+            <button
+              type="submit"
+              className="h-12 w-12 flex items-center justify-center rounded-r-full"
+              style={{ backgroundColor: '#0f7a66', color: '#fff' }}
+              aria-label="Send"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          {error && <div className="mt-3 text-red-600 text-sm">{error}</div>}
+        </form>
+      </div>
     </div>
   )
 }
