@@ -52,7 +52,7 @@ export default function FormChat() {
           {messages && messages.length > 0 && (
             <div className="flex flex-col gap-4">
               {messages.map((message) => (
-                <div key={message.id} className="flex gap-3 items-start p-1">
+                <div key={message.id} className="flex flex-row-reverse gap-3 p-1"> 
                   <div className="shrink-0">
                     {message.role === 'user' ? (
                       <div className="h-10 w-10 rounded-full border flex items-center justify-center bg-teal-600 text-white border-teal-700">
