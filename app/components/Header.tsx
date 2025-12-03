@@ -24,12 +24,12 @@ export default function Header() {
           </Link>
 
           {/* Sign up: white pill button to match screenshot. Kept as a Link for client navigation. */}
-          <Link
+          {/* <Link
             href="/signup"
             className="bg-white text-teal-800 px-4 py-1.5 rounded-full font-semibold shadow-sm hover:opacity-95"
           >
             Sign Up
-          </Link>
+          </Link> */}
         </div>
       </div>
     </header>
