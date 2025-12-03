@@ -45,50 +45,61 @@ export default function FormChat() {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
   }, [messages])
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="mx-auto w-full max-w-2xl max-h-[65vh] flex flex-col bg-transparent">
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-6">
           {messages && messages.length > 0 && (
             <div className="flex flex-col gap-4">
-              {messages.map((message) => (
-                <div key={message.id} className="flex flex-row-reverse gap-3 p-1"> 
-                  <div className="shrink-0">
-                    {message.role === 'user' ? (
+              {messages.map((message) => {
+                const isUser = message.role === 'user'
+                return (
+                  // Conditional class for the entire row container:
+                  // Bot: 'flex flex-row' (icon on left)
+                  // User: 'flex flex-row-reverse' (icon on right)
+                  <div 
+                    key={message.id} 
+                    className={`flex gap-3 p-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                  > 
+                    <div className="shrink-0">
+                      {/* Avatar Icon */}
                       <div className="h-10 w-10 rounded-full border flex items-center justify-center bg-teal-600 text-white border-teal-700">
-                        <UserRound />
+                        {isUser ? <UserRound /> : <Bot />}
                       </div>
-                    ) : (
-                      <div className="h-10 w-10 rounded-full border flex items-center justify-center bg-teal-600 text-white border-teal-700">
-                        <Bot />
-                      </div>
-                    )}
+                    </div>
+                    
+                    {/* Message Content Container */}
+                    {/* User messages need 'flex justify-end' to push the bubble to the right */}
+                    <div className={isUser ? 'flex justify-end flex-1' : 'flex justify-start flex-1'}>
+                      {message.parts.map((part, i) => {
+                        if (part.type === 'text') {
+                          return (
+                            <div
+                              key={`${message.id}-${i}`}
+                              // Message bubble styling/formatting
+                              className={`p-4 rounded-md [&>p]:mb-3 [&>p]:last:mb-0 [&>ul]:mb-4 [&>ul>li]:list-disc [&>ul>li]:ml-5 [&>ol>li]:list-decimal [&>ol>li]:ml-5 [&_strong]:font-semibold [&_b]:font-semibold max-w-[90%] ${
+                                isUser 
+                                  ? 'bg-teal-100 text-black max-w-fit' // User: fit-to-content, lighter teal
+                                  : 'bg-gray-100'                      // Bot: default gray
+                              }`}
+                            >
+                              <ReactMarkdown>{part.text}</ReactMarkdown>
+                            </div>
+                          )
+                        }
+                        return null
+                      })}
+                    </div>
                   </div>
-                  <div className={message.role === 'user' ? 'flex justify-end' : 'flex-1'}>
-                    {message.parts.map((part, i) => {
-                      if (part.type === 'text') {
-                        return (
-                          <div
-                            key={`${message.id}-${i}`}
-                            className={`p-4 rounded-md [&>p]:mb-3 [&>p]:last:mb-0 [&>ul]:mb-4 [&>ul>li]:list-disc [&>ul>li]:ml-5 [&>ol>li]:list-decimal [&>ol>li]:ml-5 [&_strong]:font-semibold [&_b]:font-semibold ${
-                              message.role === 'user' 
-                                ? 'bg-teal-100 text-black max-w-fit' 
-                                : 'bg-gray-100'
-                            }`}
-                          >
-                            <ReactMarkdown>{part.text}</ReactMarkdown>
-                          </div>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
+        
+        {/* Input Form Section */}
         <form onSubmit={handleChat} data-loading={isLoading} className="px-6 pb-6 pt-3">
           <div className="flex items-center border-2" style={{ borderColor: '#0f7a66', borderRadius: 9999 }}>
             <input
